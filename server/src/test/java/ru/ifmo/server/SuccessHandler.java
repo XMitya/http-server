@@ -1,5 +1,7 @@
 package ru.ifmo.server;
 
+import ru.ifmo.server.annotation.Url;
+
 import static ru.ifmo.server.Http.OK_HEADER;
 
 /**
@@ -11,7 +13,7 @@ public class SuccessHandler implements Handler {
 
     public static final String TEST_RESPONSE = OPEN_HTML + "<html><body>Test response";
 
-    @Override
+    @Url(url = ServerTest.SUCCESS_URL)
     public void handle(Request request, Response response) throws Exception {
         response.getOutputStream().write((OK_HEADER + TEST_RESPONSE +
                 "<br>" + request.getArguments() + CLOSE_HTML).getBytes());
