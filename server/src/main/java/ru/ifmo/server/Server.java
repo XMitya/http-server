@@ -12,11 +12,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static ru.ifmo.server.util.Utils.htmlMessage;
 import static ru.ifmo.server.Http.*;
+import static ru.ifmo.server.util.Utils.htmlMessage;
 
 /**
  * Ifmo Web Server.
@@ -145,31 +146,27 @@ public class Server implements Closeable {
             return;
         }
 
-        if (!isMethodSupported(req.method)) {
+        ServerConfig.MethodProcessor handler = config.handler(new ServerConfig.UrlProcessor(req.getPath(), Collections.singletonList(req.method).toArray(new HttpMethod[1])));
+
+        if (handler == null) {
             respond(SC_NOT_IMPLEMENTED, "Not Implemented", htmlMessage(SC_NOT_IMPLEMENTED + " Method \""
                     + req.method + "\" is not supported"), sock.getOutputStream());
 
             return;
         }
 
-        Handler handler = config.handler(req.getPath());
         Response resp = new Response(sock);
 
-        if (handler != null) {
-            try {
-                handler.handle(req, resp);
-            }
-            catch (Exception e) {
-                if (LOG.isDebugEnabled())
-                    LOG.error("Server error:", e);
-
-                respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
-                        sock.getOutputStream());
-            }
+        try {
+            handler.method.invoke(handler.owner.newInstance(), req, resp);
         }
-        else
-            respond(SC_NOT_FOUND, "Not Found", htmlMessage(SC_NOT_FOUND + " Not found"),
+        catch (Exception e) {
+            if (LOG.isDebugEnabled())
+                LOG.error("Server error:", e);
+
+            respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
                     sock.getOutputStream());
+        }
     }
 
     private Request parseRequest(Socket socket) throws IOException, URISyntaxException {

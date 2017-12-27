@@ -4,7 +4,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.*;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -16,8 +15,9 @@ import org.junit.Test;
 
 import java.net.URI;
 
-import static org.junit.Assert.*;
-import static ru.ifmo.server.TestUtils.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static ru.ifmo.server.TestUtils.assertStatusCode;
 
 /**
  * Tests main server functionality.
@@ -25,18 +25,18 @@ import static ru.ifmo.server.TestUtils.*;
 public class ServerTest {
     private static final HttpHost host = new HttpHost("localhost", ServerConfig.DFLT_PORT);
 
-    private static final String SUCCESS_URL = "/test_success";
-    private static final String NOT_FOUND_URL = "/test_not_found";
-    private static final String SERVER_ERROR_URL = "/test_fail";
+    public static final String SUCCESS_URL = "/test_success";
+    public static final String NOT_FOUND_URL = "/test_not_found";
+    public static final String SERVER_ERROR_URL = "/test_fail";
 
     private static Server server;
     private static CloseableHttpClient client;
 
     @BeforeClass
     public static void initialize() {
-        ServerConfig cfg = new ServerConfig()
-                .addHandler(SUCCESS_URL, new SuccessHandler())
-                .addHandler(SERVER_ERROR_URL, new FailHandler());
+        ServerConfig cfg = new ServerConfig();
+        cfg.addScanClass(SuccessHandler.class);
+        cfg.addScanClass(FailHandler.class);
 
         server = Server.start(cfg);
         client = HttpClients.createDefault();
